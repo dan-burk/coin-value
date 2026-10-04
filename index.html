@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>US Coin Value</title>
+<meta name="description" content="Face value vs. metallic value of US coins, from daily metal prices.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #111318;
+    --muted: #6b7280;
+    --faint: #9ca3af;
+    --line: #eceef1;
+    --soft: #f6f7f9;
+    --up: #0f8a4f;
+    --down: #b42318;
+    --accent: #111318;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-feature-settings: "tnum" 1, "cv11" 1;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 56px 16px 40px; }
+  h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  section { margin-top: 56px; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 14px; }
+
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 10px 12px; text-align: left; white-space: nowrap; }
+  th { font-size: 12px; font-weight: 500; color: var(--faint); border-bottom: 1px solid var(--line); }
+  td { border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { padding-left: 0; }
+  .num { text-align: right; }
+  .group td { padding-top: 22px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: none; }
+  .years { color: var(--muted); }
+  .comp { color: var(--muted); font-size: 13px; }
+  .over { color: var(--up); font-weight: 600; }
+  .meta { display: none; color: var(--muted); font-size: 12px; white-space: normal; }
+
+  .calc { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  select {
+    font: inherit; color: var(--text); background: var(--soft);
+    border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px;
+  }
+  .calc span { color: var(--muted); }
+  .result { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 24px 0 40px; }
+  .stat span { display: block; font-size: 12px; color: var(--faint); }
+  .stat b { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+  .big { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; }
+  .matrix td, .matrix th { text-align: right; }
+  .matrix td:first-child, .matrix th:first-child { text-align: left; }
+  .matrix td.cell { cursor: pointer; }
+  .matrix td.cell:hover, .matrix td.on { background: var(--soft); }
+  .matrix td.na { color: var(--line); }
+  .pos { color: var(--up); }
+  .neg { color: var(--down); }
+  .note { color: var(--faint); font-size: 12px; margin-top: 10px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .card { background: var(--soft); border-radius: 16px; padding: 22px; }
+  .card h3 { margin: 0 0 14px; font-size: 15px; font-weight: 600; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; color: var(--muted); }
+  .row b { color: var(--text); font-weight: 500; }
+  .card .big { display: block; margin-top: 12px; }
+  .card .sub { color: var(--muted); }
+
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  footer p { margin: 0 0 8px; }
+  .warn { color: var(--text); margin-bottom: 24px !important; }
+  .refs { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px 40px; margin-bottom: 20px; }
+  .refs h4 { margin: 0 0 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .refs th, .refs td { padding: 6px 8px; font-size: 13px; }
+  .refs td { color: var(--muted); }
+  .refs td:first-child { color: var(--text); }
+  .refs th:first-child, .refs td:first-child { padding-left: 0; }
+  footer a { color: inherit; }
+
+  @media (max-width: 520px) {
+    main { padding-top: 36px; }
+    .big { font-size: 36px; }
+    th, td { padding: 9px 8px; }
+    .years, .comp { display: none; }
+    .meta { display: block; }
+    .result { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>US Coin Value</h1>
+
+  <section>
+    <h2>Coins</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Coin</th><th class="years">Years</th><th class="num">Face</th><th class="num">Metallic</th><th class="comp">Composition</th></tr></thead>
+        <tbody id="coins"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Exchanges</h2>
+    <div class="calc">
+      <span>Give 1</span><select id="give"></select>
+      <span>get</span><select id="get"></select>
+    </div>
+    <div class="result">
+      <div class="stat"><span>Give</span><b id="giveVal"></b></div>
+      <div class="stat"><span>Get</span><b id="getVal"></b></div>
+      <div class="stat"><span>Profit</span><b id="profit"></b></div>
+      <div class="stat"><span>Increase</span><b id="gain"></b></div>
+    </div>
+    <div class="scroll">
+      <table class="matrix">
+        <thead id="mHead"></thead>
+        <tbody id="mBody"></tbody>
+      </table>
+    </div>
+    <p class="note">Row = coin you give. Column = coins you get for it. Each coin counts at the higher of face or metallic.</p>
+  </section>
+
+  <section>
+    <h2>An hour's pay, 1964</h2>
+    <div class="cards" id="wages"></div>
+    <p class="note">1964 pay in that year's coins (silver halves, quarters, dimes; copper-nickel nickels; copper cents), at today's metal prices.</p>
+  </section>
+
+  <footer>
+    <p class="warn">Melting or exporting US pennies and nickels is illegal (31 CFR Part 82). Information purposes only.</p>
+    <div class="refs">
+      <div>
+        <h4>Metal prices</h4>
+        <table><thead><tr><th>Metal</th><th class="num">Price</th><th>Close</th><th>Source</th></tr></thead><tbody id="prices"></tbody></table>
+      </div>
+      <div>
+        <h4>Wages</h4>
+        <table><thead><tr><th>Wage</th><th class="num">1964</th><th class="num">Today</th><th>Source</th></tr></thead><tbody id="wageSrc"></tbody></table>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>
+// mass in grams, composition as fractions. Manganese has no price feed and
+// is under 0.1¢ of the golden dollar, so it counts as $0.
+const COINS = [
+  { id: 'cent-zinc',   group: 'Everyday', name: 'Cent (zinc)',     years: '1982–2025', face: 0.01, mass: 2.50,  comp: { zinc: 0.975, copper: 0.025 } },
+  { id: 'cent-copper', group: 'Everyday', name: 'Cent (copper)',   years: '1959–1982', face: 0.01, mass: 3.11,  comp: { copper: 0.95, zinc: 0.05 } },
+  { id: 'nickel',      group: 'Everyday', name: 'Nickel',          years: '1946–',     face: 0.05, mass: 5.00,  comp: { copper: 0.75, nickel: 0.25 } },
+  { id: 'dime',        group: 'Everyday', name: 'Dime',            years: '1965–',     face: 0.10, mass: 2.268, comp: { copper: 0.9167, nickel: 0.0833 } },
+  { id: 'quarter',     group: 'Everyday', name: 'Quarter',         years: '1965–',     face: 0.25, mass: 5.67,  comp: { copper: 0.9167, nickel: 0.0833 } },
+  { id: 'half',        group: 'Everyday', name: 'Half dollar',     years: '1971–',     face: 0.50, mass: 11.34, comp: { copper: 0.9167, nickel: 0.0833 } },
+  { id: 'dollar',      group: 'Everyday', name: 'Dollar (golden)', years: '2000–',     face: 1.00, mass: 8.10,  comp: { copper: 0.885, zinc: 0.06, manganese: 0.035, nickel: 0.02 } },
+  { id: 'dime-ag',     group: 'Silver',   name: 'Dime',            years: 'before 1965', face: 0.10, mass: 2.50,  comp: { silver: 0.90, copper: 0.10 } },
+  { id: 'quarter-ag',  group: 'Silver',   name: 'Quarter',         years: 'before 1965', face: 0.25, mass: 6.25,  comp: { silver: 0.90, copper: 0.10 } },
+  { id: 'half-ag',     group: 'Silver',   name: 'Half dollar',     years: 'before 1965', face: 0.50, mass: 12.50, comp: { silver: 0.90, copper: 0.10 } },
+  { id: 'half-ag40',   group: 'Silver',   name: 'Half dollar (40%)', years: '1965–1970', face: 0.50, mass: 11.50, comp: { silver: 0.40, copper: 0.60 } },
+  { id: 'dollar-ag',   group: 'Silver',   name: 'Morgan / Peace dollar', years: '1878–1935', face: 1.00, mass: 26.73, comp: { silver: 0.90, copper: 0.10 } },
+  { id: 'gold-1',      group: 'Gold',     name: '$1 gold',         years: '1849–1889', face: 1,  mass: 1.672,  comp: { gold: 0.90, copper: 0.10 } },
+  { id: 'gold-10',     group: 'Gold',     name: '$10 eagle',       years: '1838–1933', face: 10, mass: 16.718, comp: { gold: 0.90, copper: 0.10 } },
+  { id: 'gold-20',     group: 'Gold',     name: '$20 double eagle', years: '1850–1933', face: 20, mass: 33.436, comp: { gold: 0.90, copper: 0.10 } },
+]
+const COMMON = ['cent-zinc', 'cent-copper', 'nickel', 'dime', 'quarter', 'half']
+const SHORT = { 'cent-zinc': 'Zinc cent', 'cent-copper': 'Copper cent', nickel: 'Nickel', dime: 'Dime', quarter: 'Quarter', half: 'Half' }
+// grams per pricing unit: troy ounce for precious metals, pound for base metals
+const GRAMS = { gold: 31.1035, silver: 31.1035, copper: 453.592, nickel: 453.592, zinc: 453.592 }
+// the change a 1964 paycheck came in, largest first
+const PAY_1964 = [
+  { id: 'half-ag', label: 'half' }, { id: 'quarter-ag', label: 'quarter' }, { id: 'dime-ag', label: 'dime' },
+  { id: 'nickel', label: 'nickel' }, { id: 'cent-copper', label: 'cent' },
+]
+
+const byId = Object.fromEntries(COINS.map(c => [c.id, c]))
+const $ = id => document.getElementById(id)
+const cents = x => Math.round(x * 100)
+
+function money(v) {
+  if (v < 1) return (v * 100).toFixed(v < 0.1 ? 1 : 0) + '¢'
+  return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+const face = v => v < 1 ? Math.round(v * 100) + '¢' : '$' + v
+const signed = v => (v >= 0 ? '+' : '−') + money(Math.abs(v))
+const pct = p => (p >= 0 ? '+' : '−') + Math.abs(p * 100).toFixed(0) + '%'
+const fmtDate = s => new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+function render(P) {
+  const metallic = c => Object.entries(c.comp)
+    .reduce((sum, [m, f]) => sum + (P.metals[m] ? c.mass * f / GRAMS[m] * P.metals[m].price : 0), 0)
+  // round to the precision money() displays, so every sum matches what's on screen
+  const shown = v => v < 0.1 ? Math.round(v * 1000) / 1000 : Math.round(v * 100) / 100
+  for (const c of COINS) { c.metal = shown(metallic(c)); c.worth = Math.max(c.face, c.metal) }
+
+  // Coins
+  let group = ''
+  $('coins').innerHTML = COINS.map(c => {
+    const head = c.group !== group && (group = c.group) !== 'Everyday' ? `<tr class="group"><td colspan="5">${group}</td></tr>` : ''
+    const comp = Object.entries(c.comp).map(([m, f]) => `${+(f * 100).toFixed(2)}% ${m}`).join(' · ')
+    return head + `<tr><td>${c.name}<span class="meta">${c.years}<br>${comp}</span></td><td class="years">${c.years}</td><td class="num">${face(c.face)}</td>` +
+      `<td class="num${c.metal > c.face ? ' over' : ''}">${money(c.metal)}</td><td class="comp">${comp}</td></tr>`
+  }).join('')
+
+  // Exchanges: give one coin, get face_give / face_get of another, when that's a whole number
+  const count = (g, r) => cents(g.face) % cents(r.face) === 0 ? cents(g.face) / cents(r.face) : 0
+  const trade = (g, r) => { const n = count(g, r); return { n, give: g.worth, get: n * r.worth, profit: n * r.worth - g.worth, gain: n * r.worth / g.worth - 1 } }
+  const tone = x => x > 0.0005 ? 'pos' : x < -0.0005 ? 'neg' : ''
+
+  const give = $('give'), get = $('get')
+  give.innerHTML = COINS.map(c => `<option value="${c.id}">${label(c)}</option>`).join('')
+  function label(c) {
+    if (c.group !== 'Silver' || c.id === 'dollar-ag') return c.name
+    return c.id === 'half-ag40' ? 'Half dollar (40% silver)' : `${c.name} (silver)`
+  }
+  function fillGet(keep) {
+    const g = byId[give.value]
+    const opts = COINS.filter(r => r.id !== g.id && count(g, r))
+    get.innerHTML = opts.map(r => `<option value="${r.id}">${label(r)}</option>`).join('')
+    if (opts.some(r => r.id === keep)) get.value = keep
+    update()
+  }
+  function update() {
+    const g = byId[give.value], r = byId[get.value]
+    const t = trade(g, r)
+    $('giveVal').textContent = money(t.give)
+    $('getVal').textContent = money(t.get)
+    $('profit').textContent = signed(t.profit)
+    $('gain').textContent = pct(t.gain)
+    $('profit').className = $('gain').className = tone(t.gain)
+    document.querySelectorAll('.matrix td.on').forEach(td => td.classList.remove('on'))
+    document.querySelector(`.matrix td[data-g="${g.id}"][data-r="${r.id}"]`)?.classList.add('on')
+  }
+  function select(g, r) { give.value = g; fillGet(r) }
+  give.onchange = () => fillGet(get.value)
+  get.onchange = update
+  select('cent-zinc', 'cent-copper')
+
+  // give × get grid of the common coins; columns no coin can be exchanged into are dropped
+  const cols = COMMON.filter(rid => COMMON.some(gid => gid !== rid && count(byId[gid], byId[rid])))
+  $('mHead').innerHTML = '<tr><th>Give ↓ Get →</th>' + cols.map(id => `<th>${SHORT[id]}</th>`).join('') + '</tr>'
+  $('mBody').innerHTML = COMMON.map(gid => '<tr><td>' + SHORT[gid] + '</td>' + cols.map(rid => {
+    const g = byId[gid], r = byId[rid]
+    if (gid === rid || !count(g, r)) return '<td class="na">·</td>'
+    const t = trade(g, r)
+    return `<td class="cell ${tone(t.gain)}" data-g="${gid}" data-r="${rid}" title="${t.n} × ${SHORT[rid]}">` +
+      `${Math.abs(t.gain) < 0.0005 ? '0%' : pct(t.gain)}</td>`
+  }).join('') + '</tr>').join('')
+  $('mBody').onclick = e => {
+    const td = e.target.closest('td.cell')
+    if (td) select(td.dataset.g, td.dataset.r)
+  }
+
+  // Wages: one 1964 hour paid in 1964 coins, at today's metal prices
+  const W = P.wages
+  const card = (title, then, now) => {
+    let left = cents(then), value = 0
+    const parts = []
+    for (const { id, label } of PAY_1964) {
+      const c = byId[id], n = Math.floor(left / cents(c.face))
+      if (!n) continue
+      left -= n * cents(c.face); value += n * c.worth
+      parts.push(`${n} ${n > 1 ? label.replace(/f$/, 've') + 's' : label}`)
+    }
+    return `<div class="card"><h3>${title}</h3>
+      <div class="row"><span>1964</span><b>${money(then)}/hr</b></div>
+      <div class="row"><span>Paid as</span><b>${parts.join(', ')}</b></div>
+      <div class="row"><span>Today</span><b>${money(now)}/hr</b></div>
+      <span class="big">${money(value)}</span>
+      <span class="sub">metallic today · ${(value / now).toFixed(1)}× today's wage</span></div>`
+  }
+  $('wages').innerHTML = card('Minimum wage', W.min1964, W.minNow) + card('Average wage', W.avg1964, W.avgNow)
+
+  // Sources
+  const SRC = {
+    comex: '<a href="https://www.cmegroup.com/markets/metals.html">COMEX</a>',
+    lme: '<a href="https://www.westmetall.com/en/markdaten.php">LME</a>',
+  }
+  $('prices').innerHTML = ['copper', 'nickel', 'zinc', 'silver', 'gold'].filter(m => P.metals[m]).map(m => {
+    const x = P.metals[m]
+    return `<tr><td>${m[0].toUpperCase() + m.slice(1)}</td><td class="num">${money(x.price)}/${x.unit}</td>` +
+      `<td>${fmtDate(x.asOf)}</td><td>${x.source === 'LME' ? SRC.lme : SRC.comex}</td></tr>`
+  }).join('')
+  const month = s => new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  $('wageSrc').innerHTML =
+    `<tr><td>Minimum</td><td class="num">${money(W.min1964)}</td><td class="num">${money(W.minNow)}</td>` +
+    `<td><a href="https://www.dol.gov/agencies/whd/minimum-wage/history/chart">US Dept. of Labor</a></td></tr>` +
+    `<tr><td>Average</td><td class="num">${money(W.avg1964)}</td><td class="num">${money(W.avgNow)}</td>` +
+    `<td><a href="https://fred.stlouisfed.org/series/AHETPI">BLS</a>, ${month(W.avgNowAsOf)}</td></tr>`
+}
+
+fetch('prices.json', { cache: 'no-cache' })
+  .then(r => r.json())
+  .then(render)
+  .catch(() => { $('coins').innerHTML = '<tr><td colspan="5">Prices unavailable.</td></tr>' })
+</script>
+</body>
+</html>

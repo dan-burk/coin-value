@@ -1,0 +1,42 @@
+{
+  "updated": "2026-10-04T23:04:50.040Z",
+  "metals": {
+    "gold": {
+      "price": 4162.3,
+      "unit": "oz",
+      "asOf": "2026-10-02",
+      "source": "COMEX"
+    },
+    "silver": {
+      "price": 59.977,
+      "unit": "oz",
+      "asOf": "2026-10-02",
+      "source": "COMEX"
+    },
+    "copper": {
+      "price": 6.492,
+      "unit": "lb",
+      "asOf": "2026-10-02",
+      "source": "COMEX"
+    },
+    "nickel": {
+      "price": 7.0012,
+      "unit": "lb",
+      "asOf": "2026-10-02",
+      "source": "LME"
+    },
+    "zinc": {
+      "price": 1.7227,
+      "unit": "lb",
+      "asOf": "2026-10-02",
+      "source": "LME"
+    }
+  },
+  "wages": {
+    "min1964": 1.25,
+    "minNow": 7.25,
+    "avg1964": 2.53,
+    "avgNow": 32.6,
+    "avgNowAsOf": "2026-09-01"
+  }
+}
