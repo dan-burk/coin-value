@@ -24,12 +24,15 @@ jobs:
         with:
           node-version: 22
 
-      # start from the deployed prices (falls back to the committed seed)
-      - run: curl -fsS https://danielburkhalter.dev/coin-value/prices.json -o prices.json || true
+      # start from the deployed data (falls back to the committed seeds)
+      - run: |
+          curl -fsS https://danielburkhalter.dev/coin-value/prices.json -o prices.json || true
+          curl -fsS https://danielburkhalter.dev/coin-value/history.json -o history.json || true
 
       - run: node scripts/fetch-prices.mjs
+      - run: node scripts/build-history.mjs
 
-      - run: mkdir _site && cp index.html prices.json logo.png _site/
+      - run: mkdir _site && cp -r index.html prices.json history.json logo.png wages _site/
 
       - uses: actions/upload-pages-artifact@v3
         with:

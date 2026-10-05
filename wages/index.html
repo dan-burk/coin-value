@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wages Over Time</title>
+<meta name="description" content="What you would be paid today if you were paid in 1964 money: US wages since 1964 in silver, gold and inflation-adjusted dollars.">
+<link rel="icon" type="image/png" href="../logo.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* One column of chart options, each a quiet card; series colors carry meaning across every chart. */
+  :root {
+    --bg: #ffffff;
+    --fg: #111318;
+    --muted: #6b7280;
+    --faint: #9ca3af;
+    --line: #eceef1;
+    --soft: #f6f7f9;
+    --dollar: #2e8b57;
+    --cpi: #4f7fe8;
+    --silver: #696969;
+    --gold: #c8951a;
+    --grid: #eef0f3;
+    --event: #8b5cf6;
+  }
+  body {
+    margin: 0;
+    background: var(--bg); color: var(--fg);
+    font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-feature-settings: "tnum" 1;
+  }
+  main { max-width: 960px; margin: 0 auto; padding-inline: 16px; padding-block: 48px 64px; }
+  h1 { font-size: 32px; letter-spacing: -0.02em; margin: 0; text-wrap: balance; display: flex; align-items: center; gap: 10px; }
+  .back { display: inline-block; margin-bottom: 18px; font-size: 13px; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--fg); }
+  .lede { color: var(--muted); margin: 6px 0 0; max-width: 62ch; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 28px 0 8px; }
+  .fact { background: var(--soft); border-radius: 12px; padding: 14px 16px; }
+  .fact span { display: block; font-size: 12px; color: var(--muted); }
+  .fact b { font-size: 22px; letter-spacing: -0.01em; }
+  .fact small { display: block; font-size: 12px; color: var(--faint); }
+  section { margin-top: 48px; }
+  .head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+  h2 { font-size: 18px; margin: 0; }
+  h2 em { font-style: normal; color: var(--faint); font-weight: 500; margin-right: 8px; }
+  .why { color: var(--muted); margin: 4px 0 10px; max-width: 70ch; }
+  .seg { display: inline-flex; background: var(--soft); border-radius: 10px; padding: 3px; gap: 2px; }
+  .seg button {
+    font: inherit; font-size: 13px; color: var(--muted); background: transparent; border: 0;
+    border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+  .seg button:focus-visible { outline: 2px solid var(--cpi); outline-offset: 1px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+  .read { margin: 14px 0 0; font-size: 15px; max-width: 70ch; }
+  .read b { font-weight: 600; }
+  .chart { width: 100%; height: 520px; }
+  .chart.tall { height: 640px; }
+  .key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .key i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+  .key i.dot { border-top-style: dotted; }
+  .dates { margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .dates summary { cursor: pointer; color: var(--fg); width: fit-content; }
+  .dates summary:focus-visible { outline: 2px solid var(--cpi); outline-offset: 2px; }
+  .dates ul { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; max-width: 80ch; }
+  .dates b { color: var(--event); font-weight: 500; margin-right: 6px; }
+  footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px 40px; }
+  .notes h4 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--fg); }
+  .notes ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+  .notes b { color: var(--fg); font-weight: 500; }
+  footer a { color: inherit; }
+  @media (max-width: 560px) {
+    .chart { height: 360px; }
+    .chart.tall { height: 560px; }
+  }
+</style>
+
+</head>
+<body>
+<main>
+  <a class="back" href="../">← US Coin Value</a>
+  <h1><img src="../logo.png" alt="" width="52" height="52" style="margin: 0 -6px 0 -10px">Wages Over Time</h1>
+  <p class="lede">What you would be paid today if you were paid in 1964 money.</p>
+
+  <div class="facts" id="facts"></div>
+
+  <section>
+    <div class="head">
+      <span></span>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Wage"><button data-w="avg" aria-pressed="true">Average</button><button data-w="min" aria-pressed="false">Minimum</button></div>
+        <div class="seg" role="group" aria-label="Units"><button data-u="usd" aria-pressed="true">Dollars</button><button data-u="ag" aria-pressed="false">Oz silver</button><button data-u="au" aria-pressed="false">Oz gold</button><button data-u="pct" aria-pressed="false">% of 1964</button></div>
+      </div>
+    </div>
+    <p class="read" id="read"></p>
+    <div class="chart" id="chartMain"></div>
+    <details class="dates">
+      <summary>Key dates</summary>
+      <ul id="dates"></ul>
+    </details>
+  </section>
+
+  <footer>
+    <div class="notes">
+      <div>
+        <h4>How it's calculated</h4>
+        <ul>
+          <li><b>Silver coins:</b> 1964 pay × 0.7234 oz per $1 × silver price</li>
+          <li><b>Gold:</b> 1964 pay ÷ $35 per oz (the dollar's official gold value in 1964) × gold price</li>
+          <li><b>Inflation:</b> 1964 pay × CPI ÷ 1964 CPI</li>
+          <li>1964 pay: $2.53 average, $1.25 minimum. In 1964, silver coins held 93.5¢ of silver per $1.</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Sources</h4>
+        <ul>
+          <li><b>Silver, gold:</b> <a href="https://www.worldbank.org/en/research/commodity-markets">World Bank</a> monthly averages, then COMEX</li>
+          <li><b>Average wage:</b> <a href="https://fred.stlouisfed.org/series/AHETPI">BLS</a>, production and nonsupervisory</li>
+          <li><b>Minimum wage:</b> <a href="https://fred.stlouisfed.org/series/FEDMINNFRWG">US Dept. of Labor</a></li>
+          <li><b>Inflation:</b> <a href="https://fred.stlouisfed.org/series/CPIAUCNS">BLS CPI-U</a></li>
+          <li id="span"></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/4.1.2/plotly-basic.min.js"></script>
+<script>
+// [month, avg wage, min wage, silver $/oz, gold $/oz, CPI]
+Promise.all([fetch('../history.json').then(r => r.json()), fetch('../prices.json').then(r => r.json())]).then(([H, P]) => {
+// last point: today's close from prices.json (the same prices as the coin page), latest wages and CPI
+const L = H[H.length - 1]
+H.push([P.metals.silver.asOf, L[1], L[2], P.metals.silver.price, P.metals.gold.price, L[5]])
+const monthName = m => new Date(m + '-15T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+document.getElementById('span').textContent =
+  `Monthly averages, ${monthName(H[0][0])} – ${monthName(L[0])}; last point is the ${new Date(P.metals.silver.asOf + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} close`
+// silver: oz per $1 in pre-1965 dimes, quarters, halves; gold: the 1964 dollar was officially 1/35 oz
+const AG_PER_DOLLAR = 0.7234, AU_PER_DOLLAR = 1 / 35
+// monthly rows are 'YYYY-MM' (plotted mid-month); the final row is a full closing date
+const x = H.map(r => r[0].length === 7 ? r[0] + '-15' : r[0])
+const col = i => H.map(r => r[i])
+const S = { avg: col(1), min: col(2) }
+const ag = col(3), au = col(4), cpi = col(5)
+const cpi0 = cpi[0]
+const measures = {
+  dollars: w => w,
+  cpi:     w => w.map((v, i) => v * cpi0 / cpi[i]),
+  silver:  w => w.map((v, i) => v / (AG_PER_DOLLAR * ag[i])),
+  gold:    w => w.map((v, i) => v / (AU_PER_DOLLAR * au[i])),
+}
+const ozAg = w => w.map((v, i) => v / ag[i]), ozAu = w => w.map((v, i) => v / au[i])
+// policy dates behind the turns, drawn as faint vertical lines
+// [month, label, what happened]; dotted lines on the chart, explained under Key dates
+const EVENTS = [
+  ['1965-07', 'Silver removed from dimes and quarters', 'Coinage Act of 1965. Halves cut to 40% silver.'],
+  ['1967-07', 'Silver unpegged from $1.29', 'The Treasury stops selling silver at $1.29/oz.'],
+  ['1968-03', 'Gold floats', 'The London Gold Pool collapses; gold trades freely.'],
+  ['1971-08', 'US leaves the gold standard', 'Nixon closes the gold window: no more dollars for gold at $35/oz.'],
+  ['1974-12', 'Americans may own gold again', 'Private gold ownership, banned since 1933, is legal again.'],
+  ['1980-01', 'Hunt brothers silver peak', 'The Hunt brothers try to corner silver; it hits about $50/oz.'],
+]
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim()
+const fmt$ = v => '$' + v.toFixed(2)
+function base(extra = {}) {
+  return Object.assign({
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+    font: { family: 'Inter, system-ui, sans-serif', size: 12, color: css('--muted') },
+    margin: { l: 56, r: 110, t: 10, b: 36 },
+    hovermode: 'x unified',
+    hoverlabel: { bgcolor: css('--bg'), bordercolor: css('--line'), font: { color: css('--fg') } },
+    showlegend: false,
+    xaxis: axis({ type: 'date', range: ['1963-06-01', '2027-03-01'] }),
+  }, extra)
+}
+function axis(extra = {}) {
+  return Object.assign({ gridcolor: css('--grid'), zeroline: false, linecolor: css('--line'), tickfont: { color: css('--muted') }, automargin: true }, extra)
+}
+const line = (y, name, color, dash = 'solid', hover = '%{y:$.2f}') =>
+  ({ x, y, name, type: 'scatter', mode: 'lines', line: { color, width: dash === 'solid' ? 2 : 1.6, dash }, hovertemplate: hover + '<extra>' + name + '</extra>' })
+// ggrepel-style label at the end of each line, nudged apart when two land close together
+function endLabels(items, log) {
+  const pos = items.map(it => ({ ...it, v: log ? Math.log10(it.y) : it.y })).sort((a, b) => a.v - b.v)
+  const span = Math.max(...pos.map(p => p.v)) - Math.min(...pos.map(p => p.v)) || 1
+  for (let i = 1; i < pos.length; i++) if (pos[i].v - pos[i - 1].v < span * 0.07) pos[i].v = pos[i - 1].v + span * 0.07
+  // on a log axis Plotly places annotations by log10(value), which p.v already is
+  return pos.map(p => ({ x: x[x.length - 1], y: p.v, xanchor: 'left', xshift: 6, showarrow: false,
+    text: `<b>${p.text}</b>`, font: { color: p.color, size: 12 } }))
+}
+const config = { displayModeBar: false, responsive: true }
+
+// Headline facts: today's value of 1964 minimum-wage pay
+function facts() {
+  const last = H.length - 1, w = state.w
+  const f = [
+    [w === 'avg' ? '1964 average wage' : '1964 minimum wage', fmt$(PAY64[w]), 'per hour'],
+    ['Paid in silver coins today', fmt$(kept(w, 'silver')[last]), `today's ${fmt$(S[w][last])} is ${Math.round(S[w][last] / kept(w, 'silver')[last] * 100)}% of this`],
+    ['Paid in gold today', fmt$(kept(w, 'gold')[last]), `today's ${fmt$(S[w][last])} is ${Math.round(S[w][last] / kept(w, 'gold')[last] * 100)}% of this`],
+    ['Adjusted for inflation today', fmt$(kept(w, 'cpi')[last]), `today's ${fmt$(S[w][last])} is ${Math.round(S[w][last] / kept(w, 'cpi')[last] * 100)}% of this`],
+  ]
+  document.getElementById('facts').innerHTML = f.map(([a, b, c]) => `<div class="fact"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('')
+}
+
+// A: three stacked panels
+function drawA(which) {
+  const sets = which === 'both' ? ['avg', 'min'] : [which]
+  const t = []
+  const panels = [['Dollars per hour', w => w, '--dollar', '%{y:$.2f}'], ['Oz silver per hour', ozAg, '--silver', '%{y:.2f} oz'], ['Oz gold per hour', ozAu, '--gold', '%{y:.3f} oz']]
+  panels.forEach(([title, f, c, hov], k) => sets.forEach(s => {
+    t.push({ ...line(f(S[s]), s === 'avg' ? 'Average' : 'Minimum', css(c), s === 'avg' ? 'solid' : 'dot', hov), xaxis: 'x', yaxis: 'y' + (k ? k + 1 : '') })
+  }))
+  const ax = (dom, title, fmt) => axis({ domain: dom, title: { text: title, font: { size: 12, color: css('--muted') } }, tickformat: fmt, rangemode: 'tozero' })
+  Plotly.react('chartA', t, base({
+    margin: { l: 64, r: 20, t: 10, b: 36 },
+    grid: { rows: 3, columns: 1, pattern: 'coupled' },
+    yaxis: ax([0.70, 1], 'Dollars', '$.0f'),
+    yaxis2: ax([0.36, 0.64], 'Oz silver', '.1f'),
+    yaxis3: ax([0, 0.30], 'Oz gold', '.2f'),
+    xaxis: axis({ type: 'date', range: ['1963-06-01', '2027-03-01'], anchor: 'y3' }),
+  }), config)
+}
+
+// 1964 pay carried forward in silver coins, gold at $35/oz and CPI, next to actual pay.
+// Every series is computed in dollars, then converted to the chosen unit.
+const yr64 = arr => { const v = arr.filter((_, i) => H[i][0].startsWith('1964')); return v.reduce((p, q) => p + q, 0) / v.length }
+const PAY64 = { min: 1.25, avg: Math.round(yr64(S.avg) * 100) / 100 }
+const CPI64 = yr64(cpi)
+const KEPT = {
+  silver: (w, i) => w * AG_PER_DOLLAR * ag[i],
+  gold:   (w, i) => w * AU_PER_DOLLAR * au[i],
+  cpi:    (w, i) => w * cpi[i] / CPI64,
+}
+const kept = (w, k) => H.map((_, i) => KEPT[k](PAY64[w], i))
+const UNITS = {
+  usd: { conv: (v, i) => v, label: v => '$' + v.toLocaleString('en-US'), hover: '%{y:$,.2f}', title: 'Dollars per hour' },
+  ag:  { conv: (v, i) => v / ag[i], label: v => String(v), hover: '%{y:.3f} oz', title: 'Ounces of silver per hour' },
+  au:  { conv: (v, i) => v / au[i], label: v => String(v), hover: '%{y:.4f} oz', title: 'Ounces of gold per hour' },
+  pct: { conv: (v, i) => v, label: v => +(v * 100).toPrecision(2) + '%', hover: '%{y:.0%}', title: 'Actual pay as % of 1964 pay' },
+}
+// one sentence, with today's numbers, saying how to read the current view
+function caption() {
+  const { w, u } = state, last = H.length - 1, who = w === 'avg' ? 'average' : 'minimum'
+  const now = S[w][last], silver = kept(w, 'silver')[last], gold = kept(w, 'gold')[last], infl = kept(w, 'cpi')[last]
+  const oz = (v, d) => v.toFixed(d) + ' oz'
+  const text = {
+    usd: `Today's ${who} wage is <b>${fmt$(now)}</b> an hour. The 1964 ${who} wage of ${fmt$(PAY64[w])}, paid in silver coins, would be worth <b>${fmt$(silver)}</b> an hour today.`,
+    ag: `Today an hour of ${who} pay buys <b>${oz(now / ag[last], 2)}</b> of silver. In 1964, an hour's pay in silver coins held <b>${oz(PAY64[w] * AG_PER_DOLLAR, 2)}</b>.`,
+    au: `Today an hour of ${who} pay buys <b>${oz(now / au[last], 4)}</b> of gold. At 1964's $35 an ounce, an hour's pay was <b>${oz(PAY64[w] * AU_PER_DOLLAR, 3)}</b>.`,
+    pct: `Measured in silver, today's ${who} hour earns <b>${Math.round(now / silver * 100)}%</b> of a 1964 hour: for every $1 of silver a 1964 worker earned, today's worker earns <b>${Math.round(now / silver * 100)}¢</b>. Adjusted for inflation, it's <b>${((v) => v < 1 ? Math.round(v * 100) + '¢' : fmt$(v))(now / infl)}</b> for every $1, ${((p) => p >= 0 ? p + '% more' : -p + '% less')(Math.round((now / infl - 1) * 100))} buying power than 1964.`,
+  }
+  document.getElementById('read').innerHTML = text[u]
+}
+function drawMain() {
+  caption()
+  const { w, u } = state, U = UNITS[u], conv = arr => arr.map(U.conv)
+  // % of 1964: actual pay divided by each 1964 rate; 100% means as well off as in 1964
+  const ratio = k => { const e = kept(w, k); return S[w].map((v, i) => v / e[i]) }
+  const series = u === 'pct' ? [
+    ['1964 Level', S[w].map(() => 1), '--dollar'],
+    ['vs. Silver Coins', ratio('silver'), '--silver'],
+    ['vs. Gold', ratio('gold'), '--gold'],
+    ['vs. Inflation', ratio('cpi'), '--cpi'],
+  ] : [
+    ['Hourly Rate', S[w], '--dollar'],
+    ['1964 Rate, Paid in Silver Coins', kept(w, 'silver'), '--silver'],
+    ['1964 Rate, Paid in Gold', kept(w, 'gold'), '--gold'],
+    ['1964 Rate, Adjusted for Inflation', kept(w, 'cpi'), '--cpi'],
+  ]
+  const t = series.map(([n, y, c], k) => line(conv(y), n, css(c), u === 'pct' && k === 0 ? 'dash' : 'solid', U.hover))
+  const top = Math.max(...t.flatMap(tr => tr.y)), bottom = Math.min(...t.flatMap(tr => tr.y))
+  // log-axis ticks at 1-2-5 steps spanning the data
+  const all = t.flatMap(tr => tr.y), lo = Math.min(...all), hi = Math.max(...all), vals = []
+  for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
+    for (const m of [1, 2, 5]) { const v = +(m * 10 ** e).toPrecision(1); if (v >= lo / 1.5 && v <= hi * 1.5) vals.push(v) }
+  const ev = EVENTS.map(([m, label, why]) => ({
+    x: [m + '-15', m + '-15'], y: [bottom, top], type: 'scatter', mode: 'lines', showlegend: false,
+    line: { color: css('--event'), width: 1.2, dash: 'dot' }, opacity: 0.5, hoverinfo: 'skip',
+  }))
+  // the year in purple at the foot of each line; neighbors alternate rows so they don't overlap
+  const years = innerWidth < 600 ? [] : EVENTS.map(([m], i) => ({
+    x: m + '-15', y: 0, yref: 'paper', yanchor: 'top', yshift: -22 - (i % 2) * 13, showarrow: false,
+    text: m.slice(0, 4), font: { size: 10, color: css('--event') },
+  }))
+  Plotly.react('chartMain', [...t, ...ev], base({
+    showlegend: true,
+    legend: { orientation: 'h', x: 0, y: 1.02, yanchor: 'bottom', font: { size: 12, color: css('--fg') } },
+    yaxis: axis({ type: 'log', tickvals: vals, ticktext: vals.map(U.label), title: { text: U.title + ' (log scale)', font: { size: 12, color: css('--muted') } } }),
+    margin: { l: 64, r: 20, t: 10, b: years.length ? 62 : 36 },
+    annotations: years,
+  }), config)
+}
+
+// segmented controls
+const state = { w: 'avg', u: 'usd' }
+document.querySelectorAll('.seg button').forEach(btn => {
+  const key = Object.keys(btn.dataset)[0]
+  btn.addEventListener('click', () => {
+    state[key] = btn.dataset[key]
+    btn.parentElement.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)))
+    facts(); drawMain()
+  })
+})
+document.getElementById('dates').innerHTML = EVENTS.map(([d, label, why]) =>
+  `<li><b>${new Date(d + '-15T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</b>${label}. ${why}</li>`).join('')
+function drawAll() { facts(); drawMain() }
+drawAll()
+}).catch(() => { document.getElementById('read').textContent = 'Data unavailable. Try reloading.' })
+</script>
+</body>
+</html>
