@@ -31,7 +31,7 @@
     font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
     font-feature-settings: "tnum" 1, "cv11" 1;
   }
-  main { max-width: 880px; margin: 0 auto; padding: 56px 16px 40px; }
+  main { max-width: 960px; margin: 0 auto; padding: 56px 16px 40px; }
   h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; margin: 0; display: flex; align-items: center; gap: 10px; }
   section { margin-top: 56px; }
   h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 14px; }
@@ -68,8 +68,10 @@
   .pos { color: var(--up); }
   .neg { color: var(--down); }
   .note { color: var(--faint); font-size: 12px; margin-top: 10px; }
-  .more { margin: 14px 0 0; font-weight: 500; }
-  .more a { color: var(--text); }
+  .tabs { display: inline-flex; gap: 2px; padding: 3px; margin-bottom: 28px; background: var(--soft); border-radius: 10px; }
+  .tabs a { padding: 7px 14px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--muted); text-decoration: none; }
+  .tabs a:hover { color: var(--text); }
+  .tabs a[aria-current="page"] { background: var(--bg); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
 
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
   .card { background: var(--soft); border-radius: 16px; padding: 22px; }
@@ -102,6 +104,7 @@
 </head>
 <body>
 <main>
+  <nav class="tabs" aria-label="Pages"><a href="./" aria-current="page">Coin Value</a><a href="wages/">Wages Over Time</a></nav>
   <h1><img src="logo.png" alt="" width="52" height="52" style="margin: 0 -6px 0 -10px">US Coin Value</h1>
 
   <section>
@@ -139,7 +142,6 @@
     <h2>An hour's pay, 1964</h2>
     <div class="cards" id="wages"></div>
     <p class="note">1964 pay in that year's coins (silver halves, quarters, dimes; copper-nickel nickels; copper cents), at today's metal prices.</p>
-    <p class="more"><a href="wages/">Wages Over Time →</a></p>
   </section>
 
   <footer>

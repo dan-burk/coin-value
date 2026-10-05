@@ -32,10 +32,12 @@
     font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
     font-feature-settings: "tnum" 1;
   }
-  main { max-width: 960px; margin: 0 auto; padding-inline: 16px; padding-block: 48px 64px; }
+  main { max-width: 960px; margin: 0 auto; padding-inline: 16px; padding-block: 56px 64px; }
   h1 { font-size: 32px; letter-spacing: -0.02em; margin: 0; text-wrap: balance; display: flex; align-items: center; gap: 10px; }
-  .back { display: inline-block; margin-bottom: 18px; font-size: 13px; color: var(--muted); text-decoration: none; }
-  .back:hover { color: var(--fg); }
+  .tabs { display: inline-flex; gap: 2px; padding: 3px; margin-bottom: 28px; background: var(--soft); border-radius: 10px; }
+  .tabs a { padding: 7px 14px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--muted); text-decoration: none; }
+  .tabs a:hover { color: var(--fg); }
+  .tabs a[aria-current="page"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
   .lede { color: var(--muted); margin: 6px 0 0; max-width: 62ch; }
   .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 28px 0 8px; }
   .fact { background: var(--soft); border-radius: 12px; padding: 14px 16px; }
@@ -73,6 +75,9 @@
   .notes ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
   .notes b { color: var(--fg); font-weight: 500; }
   footer a { color: inherit; }
+  @media (max-width: 520px) {
+    main { padding-top: 36px; }
+  }
   @media (max-width: 560px) {
     .chart { height: 360px; }
     .chart.tall { height: 560px; }
@@ -82,7 +87,7 @@
 </head>
 <body>
 <main>
-  <a class="back" href="../">← US Coin Value</a>
+  <nav class="tabs" aria-label="Pages"><a href="../">Coin Value</a><a href="./" aria-current="page">Wages Over Time</a></nav>
   <h1><img src="../logo.png" alt="" width="52" height="52" style="margin: 0 -6px 0 -10px">Wages Over Time</h1>
   <p class="lede">What you would be paid today if you were paid in 1964 money.</p>
 
@@ -109,7 +114,7 @@
       <div>
         <h4>How it's calculated</h4>
         <ul>
-          <li><b>Silver coins:</b> 1964 pay × 0.7234 oz per $1 × silver price</li>
+          <li><b>Silver:</b> 1964 pay × 0.7234 oz per $1 (the silver in 1964 dimes, quarters and halves) × silver price</li>
           <li><b>Gold:</b> 1964 pay ÷ $35 per oz (the dollar's official gold value in 1964) × gold price</li>
           <li><b>Inflation:</b> 1964 pay × CPI ÷ 1964 CPI</li>
           <li>1964 pay: $2.53 average, $1.25 minimum. In 1964, silver coins held 93.5¢ of silver per $1.</li>
@@ -199,7 +204,7 @@ function facts() {
   const last = H.length - 1, w = state.w
   const f = [
     [w === 'avg' ? '1964 average wage' : '1964 minimum wage', fmt$(PAY64[w]), 'per hour'],
-    ['Paid in silver coins today', fmt$(kept(w, 'silver')[last]), `today's ${fmt$(S[w][last])} is ${Math.round(S[w][last] / kept(w, 'silver')[last] * 100)}% of this`],
+    ['Paid in silver today', fmt$(kept(w, 'silver')[last]), `today's ${fmt$(S[w][last])} is ${Math.round(S[w][last] / kept(w, 'silver')[last] * 100)}% of this`],
     ['Paid in gold today', fmt$(kept(w, 'gold')[last]), `today's ${fmt$(S[w][last])} is ${Math.round(S[w][last] / kept(w, 'gold')[last] * 100)}% of this`],
     ['Adjusted for inflation today', fmt$(kept(w, 'cpi')[last]), `today's ${fmt$(S[w][last])} is ${Math.round(S[w][last] / kept(w, 'cpi')[last] * 100)}% of this`],
   ]
@@ -225,7 +230,7 @@ function drawA(which) {
   }), config)
 }
 
-// 1964 pay carried forward in silver coins, gold at $35/oz and CPI, next to actual pay.
+// 1964 pay carried forward in silver, gold at $35/oz and CPI, next to actual pay.
 // Every series is computed in dollars, then converted to the chosen unit.
 const yr64 = arr => { const v = arr.filter((_, i) => H[i][0].startsWith('1964')); return v.reduce((p, q) => p + q, 0) / v.length }
 const PAY64 = { min: 1.25, avg: Math.round(yr64(S.avg) * 100) / 100 }
@@ -248,8 +253,8 @@ function caption() {
   const now = S[w][last], silver = kept(w, 'silver')[last], gold = kept(w, 'gold')[last], infl = kept(w, 'cpi')[last]
   const oz = (v, d) => v.toFixed(d) + ' oz'
   const text = {
-    usd: `Today's ${who} wage is <b>${fmt$(now)}</b> an hour. The 1964 ${who} wage of ${fmt$(PAY64[w])}, paid in silver coins, would be worth <b>${fmt$(silver)}</b> an hour today.`,
-    ag: `Today an hour of ${who} pay buys <b>${oz(now / ag[last], 2)}</b> of silver. In 1964, an hour's pay in silver coins held <b>${oz(PAY64[w] * AG_PER_DOLLAR, 2)}</b>.`,
+    usd: `Today's ${who} wage is <b>${fmt$(now)}</b> an hour. The 1964 ${who} wage of ${fmt$(PAY64[w])}, paid in silver, would be worth <b>${fmt$(silver)}</b> an hour today.`,
+    ag: `Today an hour of ${who} pay buys <b>${oz(now / ag[last], 2)}</b> of silver. In 1964, an hour's pay held <b>${oz(PAY64[w] * AG_PER_DOLLAR, 2)}</b>.`,
     au: `Today an hour of ${who} pay buys <b>${oz(now / au[last], 4)}</b> of gold. At 1964's $35 an ounce, an hour's pay was <b>${oz(PAY64[w] * AU_PER_DOLLAR, 3)}</b>.`,
     pct: `Measured in silver, today's ${who} hour earns <b>${Math.round(now / silver * 100)}%</b> of a 1964 hour: for every $1 of silver a 1964 worker earned, today's worker earns <b>${Math.round(now / silver * 100)}¢</b>. Adjusted for inflation, it's <b>${((v) => v < 1 ? Math.round(v * 100) + '¢' : fmt$(v))(now / infl)}</b> for every $1, ${((p) => p >= 0 ? p + '% more' : -p + '% less')(Math.round((now / infl - 1) * 100))} buying power than 1964.`,
   }
@@ -262,12 +267,12 @@ function drawMain() {
   const ratio = k => { const e = kept(w, k); return S[w].map((v, i) => v / e[i]) }
   const series = u === 'pct' ? [
     ['1964 Level', S[w].map(() => 1), '--dollar'],
-    ['vs. Silver Coins', ratio('silver'), '--silver'],
+    ['vs. Silver', ratio('silver'), '--silver'],
     ['vs. Gold', ratio('gold'), '--gold'],
     ['vs. Inflation', ratio('cpi'), '--cpi'],
   ] : [
     ['Hourly Rate', S[w], '--dollar'],
-    ['1964 Rate, Paid in Silver Coins', kept(w, 'silver'), '--silver'],
+    ['1964 Rate, Paid in Silver', kept(w, 'silver'), '--silver'],
     ['1964 Rate, Paid in Gold', kept(w, 'gold'), '--gold'],
     ['1964 Rate, Adjusted for Inflation', kept(w, 'cpi'), '--cpi'],
   ]
