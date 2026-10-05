@@ -45,7 +45,7 @@
   .num { text-align: right; }
   .group td { padding-top: 22px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: none; }
   .years { color: var(--muted); }
-  .comp { color: var(--muted); font-size: 13px; }
+  td.comp { color: var(--muted); font-size: 13px; }
   .over { color: var(--up); font-weight: 600; }
   .meta { display: none; color: var(--muted); font-size: 12px; white-space: normal; }
 
@@ -99,13 +99,16 @@
     .years, .comp { display: none; }
     .meta { display: block; }
     .result { grid-template-columns: 1fr 1fr; }
+    .matrix th, .matrix td { padding: 8px 5px; font-size: 13px; }
+    .matrix th { white-space: normal; vertical-align: bottom; }
+    select, .tabs a { min-height: 44px; display: inline-flex; align-items: center; }
   }
 </style>
 </head>
 <body>
 <main>
   <nav class="tabs" aria-label="Pages"><a href="./" aria-current="page">Coin Value</a><a href="wages/">Wages Over Time</a></nav>
-  <h1><img src="logo.png" alt="" width="52" height="52" style="margin: 0 -6px 0 -10px">US Coin Value</h1>
+  <h1><img src="logo.png" alt="" width="40" height="40" style="margin-left: -4px">US Coin Value</h1>
 
   <section>
     <h2>Coins</h2>
@@ -163,8 +166,8 @@
 // mass in grams, composition as fractions. Manganese has no price feed and
 // is under 0.1¢ of the golden dollar, so it counts as $0.
 const COINS = [
-  { id: 'cent-zinc',   group: 'Everyday', name: 'Cent (zinc)',     years: '1982–2025', face: 0.01, mass: 2.50,  comp: { zinc: 0.975, copper: 0.025 } },
-  { id: 'cent-copper', group: 'Everyday', name: 'Cent (copper)',   years: '1959–1982', face: 0.01, mass: 3.11,  comp: { copper: 0.95, zinc: 0.05 } },
+  { id: 'cent-zinc',   group: 'Everyday', name: 'Zinc cent',     years: '1982–2025', face: 0.01, mass: 2.50,  comp: { zinc: 0.975, copper: 0.025 } },
+  { id: 'cent-copper', group: 'Everyday', name: 'Copper cent',   years: '1959–1982', face: 0.01, mass: 3.11,  comp: { copper: 0.95, zinc: 0.05 } },
   { id: 'nickel',      group: 'Everyday', name: 'Nickel',          years: '1946–',     face: 0.05, mass: 5.00,  comp: { copper: 0.75, nickel: 0.25 } },
   { id: 'dime',        group: 'Everyday', name: 'Dime',            years: '1965–',     face: 0.10, mass: 2.268, comp: { copper: 0.9167, nickel: 0.0833 } },
   { id: 'quarter',     group: 'Everyday', name: 'Quarter',         years: '1965–',     face: 0.25, mass: 5.67,  comp: { copper: 0.9167, nickel: 0.0833 } },
@@ -180,7 +183,7 @@ const COINS = [
   { id: 'gold-20',     group: 'Gold',     name: '$20 double eagle', years: '1850–1933', face: 20, mass: 33.436, comp: { gold: 0.90, copper: 0.10 } },
 ]
 const COMMON = ['cent-zinc', 'cent-copper', 'nickel', 'dime', 'quarter', 'half']
-const SHORT = { 'cent-zinc': 'Zinc cent', 'cent-copper': 'Copper cent', nickel: 'Nickel', dime: 'Dime', quarter: 'Quarter', half: 'Half' }
+const SHORT = { 'cent-zinc': 'Zinc cent', 'cent-copper': 'Copper cent', nickel: 'Nickel', dime: 'Dime', quarter: 'Quarter', half: 'Half dollar' }
 // grams per pricing unit: troy ounce for precious metals, pound for base metals
 const GRAMS = { gold: 31.1035, silver: 31.1035, copper: 453.592, nickel: 453.592, zinc: 453.592 }
 // the change a 1964 paycheck came in, largest first
@@ -208,7 +211,7 @@ function pct(p) {
   if (p === 0) return '0%'
   const a = Math.abs(p * 100), sign = p > 0 ? '+' : '−'
   if (a < 0.05) return sign + '<0.1%'
-  return sign + (a < 1 ? a.toFixed(1) : a.toFixed(0)) + '%'
+  return sign + (a < 1 ? a.toFixed(1) : Math.round(a).toLocaleString('en-US')) + '%'
 }
 const fmtDate = s => new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
@@ -255,7 +258,7 @@ function render(P) {
     const g = byId[give.value], r = byId[get.value]
     const t = trade(g, r)
     // which value each side counts at: face, or metal when that's higher
-    const basis = c => c.metal > c.face ? 'metal' : 'face'
+    const basis = c => c.metal > c.face ? 'metallic' : 'face'
     $('giveVal').textContent = money(t.give)
     $('giveHow').textContent = `(${basis(g)})`
     $('getVal').textContent = money(t.get)
@@ -276,7 +279,7 @@ function render(P) {
   $('mHead').innerHTML = '<tr><th>Give ↓ Get →</th>' + cols.map(id => `<th>${SHORT[id]}</th>`).join('') + '</tr>'
   $('mBody').innerHTML = COMMON.map(gid => '<tr><td>' + SHORT[gid] + '</td>' + cols.map(rid => {
     const g = byId[gid], r = byId[rid]
-    if (gid === rid || !count(g, r)) return '<td class="na">·</td>'
+    if (gid === rid || !count(g, r)) return '<td class="na"></td>'
     const t = trade(g, r)
     return `<td class="cell ${tone(t.gain)}" data-g="${gid}" data-r="${rid}" title="${t.n} × ${SHORT[rid]}">` +
       `${pct(t.gain)}</td>`
@@ -301,7 +304,7 @@ function render(P) {
       <div class="row"><span>1964</span><b>${money(then)}/hr</b></div>
       <div class="row"><span>Paid as</span><b>${parts.join(', ')}</b></div>
       <div class="row"><span>Today</span><b>${money(now)}/hr</b></div>
-      <span class="big">${money(value)}</span>
+      <span class="big">$${value.toFixed(2)}</span>
       <span class="sub">metallic today · ${(value / now).toFixed(1)}× today's wage</span></div>`
   }
   $('wages').innerHTML = card('Minimum wage', W.min1964, W.minNow) + card('Average wage', W.avg1964, W.avgNow)

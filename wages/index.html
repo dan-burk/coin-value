@@ -78,9 +78,11 @@
   footer a { color: inherit; }
   @media (max-width: 520px) {
     main { padding-top: 36px; }
+    .seg button, .tabs a { min-height: 44px; }
+    .tabs a { display: inline-flex; align-items: center; }
   }
   @media (max-width: 560px) {
-    .chart { height: 360px; }
+    .chart { height: 560px; }
     .chart.tall { height: 560px; }
   }
 </style>
@@ -89,7 +91,7 @@
 <body>
 <main>
   <nav class="tabs" aria-label="Pages"><a href="../">Coin Value</a><a href="./" aria-current="page">Wages Over Time</a></nav>
-  <h1><img src="../logo.png" alt="" width="52" height="52" style="margin: 0 -6px 0 -10px">Wages Over Time</h1>
+  <h1><img src="../logo.png" alt="" width="40" height="40" style="margin-left: -4px">Wages Over Time</h1>
   <p class="lede">What you would be paid today if you were paid in 1964 money.</p>
 
   <div class="facts" id="facts"></div>
@@ -105,7 +107,7 @@
     <p class="read" id="read"></p>
     <div class="chart" id="chartMain"></div>
     <details class="dates">
-      <summary>Key dates</summary>
+      <summary>Key dates (purple lines)</summary>
       <ul id="dates"></ul>
     </details>
   </section>
@@ -263,6 +265,7 @@ function caption() {
 }
 function drawMain() {
   caption()
+  const narrow = innerWidth < 600
   const { w, u } = state, U = UNITS[u], conv = arr => arr.map(U.conv)
   // % of 1964: actual pay divided by each 1964 rate; 100% means as well off as in 1964
   const ratio = k => { const e = kept(w, k); return S[w].map((v, i) => v / e[i]) }
@@ -294,9 +297,12 @@ function drawMain() {
   }))
   Plotly.react('chartMain', [...t, ...ev], base({
     showlegend: true,
-    legend: { orientation: 'h', x: 0, y: 1.02, yanchor: 'bottom', font: { size: 12, color: css('--fg') } },
-    yaxis: axis({ type: 'log', tickvals: vals, ticktext: vals.map(U.label), title: { text: U.title + ' (log scale)', font: { size: 12, color: css('--muted') } } }),
-    margin: { l: 64, r: 20, t: 10, b: years.length ? 62 : 36 },
+    // on a phone the legend moves under the plot and the axis title shortens, leaving room for the lines
+    legend: narrow
+      ? { orientation: 'h', x: 0, y: -0.1, yanchor: 'top', font: { size: 12, color: css('--fg') } }
+      : { orientation: 'h', x: 0, y: 1.02, yanchor: 'bottom', font: { size: 12, color: css('--fg') } },
+    yaxis: axis({ type: 'log', tickvals: vals, ticktext: vals.map(U.label), title: { text: narrow ? 'log scale' : U.title + ' (log scale)', font: { size: 12, color: css('--muted') } } }),
+    margin: narrow ? { l: 48, r: 8, t: 10, b: 30 } : { l: 64, r: 20, t: 10, b: years.length ? 62 : 36 },
     annotations: years,
   }), config)
 }
