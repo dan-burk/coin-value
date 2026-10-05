@@ -58,6 +58,7 @@
   .result { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 24px 0 40px; }
   .stat span { display: block; font-size: 12px; color: var(--faint); }
   .stat b { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+  .stat small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
   .big { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; }
   .matrix td, .matrix th { text-align: right; }
   .matrix td:first-child, .matrix th:first-child { text-align: left; }
@@ -118,8 +119,8 @@
       <span>get</span><select id="get"></select>
     </div>
     <div class="result">
-      <div class="stat"><span>Give</span><b id="giveVal"></b></div>
-      <div class="stat"><span>Get</span><b id="getVal"></b></div>
+      <div class="stat"><span>Give</span><b id="giveVal"></b><small id="giveHow"></small></div>
+      <div class="stat"><span>Get</span><b id="getVal"></b><small id="getHow"></small></div>
       <div class="stat"><span>Profit</span><b id="profit"></b></div>
       <div class="stat"><span>Increase</span><b id="gain"></b></div>
     </div>
@@ -187,20 +188,30 @@ const byId = Object.fromEntries(COINS.map(c => [c.id, c]))
 const $ = id => document.getElementById(id)
 const cents = x => Math.round(x * 100)
 
+// Every amount is kept to a tenth of a cent and shown in full, so sums of
+// shown parts always equal the shown total: 14.6¢, 25¢, $1.075, $21.71
 function money(v) {
-  if (v < 1) return (v * 100).toFixed(v < 0.1 ? 1 : 0) + '¢'
-  return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const tenths = Math.round(v * 1000)
+  if (tenths < 1000) return +(tenths / 10).toFixed(1) + '¢'
+  const digits = tenths % 10 ? 3 : 2
+  return '$' + (tenths / 1000).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
 }
 const face = v => v < 1 ? Math.round(v * 100) + '¢' : '$' + v
-const signed = v => (v >= 0 ? '+' : '−') + money(Math.abs(v))
-const pct = p => (p >= 0 ? '+' : '−') + Math.abs(p * 100).toFixed(0) + '%'
+const signed = v => (v > 0 ? '+' : v < 0 ? '−' : '') + money(Math.abs(v))
+// whole percents, a decimal under 1%, never a signed zero
+function pct(p) {
+  if (p === 0) return '0%'
+  const a = Math.abs(p * 100), sign = p > 0 ? '+' : '−'
+  if (a < 0.05) return sign + '<0.1%'
+  return sign + (a < 1 ? a.toFixed(1) : a.toFixed(0)) + '%'
+}
 const fmtDate = s => new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
 function render(P) {
   const metallic = c => Object.entries(c.comp)
     .reduce((sum, [m, f]) => sum + (P.metals[m] ? c.mass * f / GRAMS[m] * P.metals[m].price : 0), 0)
   // round to the precision money() displays, so every sum matches what's on screen
-  const shown = v => v < 0.1 ? Math.round(v * 1000) / 1000 : Math.round(v * 100) / 100
+  const shown = v => v < 1 ? Math.round(v * 1000) / 1000 : Math.round(v * 100) / 100
   for (const c of COINS) { c.metal = shown(metallic(c)); c.worth = Math.max(c.face, c.metal) }
 
   // Coins
@@ -214,8 +225,13 @@ function render(P) {
 
   // Exchanges: give one coin, get face_give / face_get of another, when that's a whole number
   const count = (g, r) => cents(g.face) % cents(r.face) === 0 ? cents(g.face) / cents(r.face) : 0
-  const trade = (g, r) => { const n = count(g, r); return { n, give: g.worth, get: n * r.worth, profit: n * r.worth - g.worth, gain: n * r.worth / g.worth - 1 } }
-  const tone = x => x > 0.0005 ? 'pos' : x < -0.0005 ? 'neg' : ''
+  // amounts are whole tenths of a cent; snapping profit to that grid makes an even swap exactly 0
+  const tenth = v => Math.round(v * 1000) / 1000
+  const trade = (g, r) => {
+    const n = count(g, r), give = g.worth, get = tenth(n * r.worth), profit = tenth(get - give)
+    return { n, give, get, profit, gain: profit / give }
+  }
+  const tone = x => x > 0 ? 'pos' : x < 0 ? 'neg' : ''
 
   const give = $('give'), get = $('get')
   give.innerHTML = COINS.map(c => `<option value="${c.id}">${label(c)}</option>`).join('')
@@ -233,8 +249,12 @@ function render(P) {
   function update() {
     const g = byId[give.value], r = byId[get.value]
     const t = trade(g, r)
+    // which value each side counts at: face, or metal when that's higher
+    const basis = c => c.metal > c.face ? 'metal' : 'face'
     $('giveVal').textContent = money(t.give)
+    $('giveHow').textContent = `(${basis(g)})`
     $('getVal').textContent = money(t.get)
+    $('getHow').textContent = `(${t.n.toLocaleString()} × ${money(r.worth)} ${basis(r)})`
     $('profit').textContent = signed(t.profit)
     $('gain').textContent = pct(t.gain)
     $('profit').className = $('gain').className = tone(t.gain)
@@ -254,7 +274,7 @@ function render(P) {
     if (gid === rid || !count(g, r)) return '<td class="na">·</td>'
     const t = trade(g, r)
     return `<td class="cell ${tone(t.gain)}" data-g="${gid}" data-r="${rid}" title="${t.n} × ${SHORT[rid]}">` +
-      `${Math.abs(t.gain) < 0.0005 ? '0%' : pct(t.gain)}</td>`
+      `${pct(t.gain)}</td>`
   }).join('') + '</tr>').join('')
   $('mBody').onclick = e => {
     const td = e.target.closest('td.cell')
@@ -288,7 +308,7 @@ function render(P) {
   }
   $('prices').innerHTML = ['copper', 'nickel', 'zinc', 'silver', 'gold'].filter(m => P.metals[m]).map(m => {
     const x = P.metals[m]
-    return `<tr><td>${m[0].toUpperCase() + m.slice(1)}</td><td class="num">${money(x.price)}/${x.unit}</td>` +
+    return `<tr><td>${m[0].toUpperCase() + m.slice(1)}</td><td class="num">$${x.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: x.unit === 'lb' ? 4 : 2 })}/${x.unit}</td>` +
       `<td>${fmtDate(x.asOf)}</td><td>${x.source === 'LME' ? SRC.lme : SRC.comex}</td></tr>`
   }).join('')
   const month = s => new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
